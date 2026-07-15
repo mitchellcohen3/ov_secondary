@@ -1,0 +1,66 @@
+<launch>
+
+    <!-- ================================================================ -->
+    <!-- Launches both the MSCKF and the secondary pose graph optimization in the same launch file-->
+
+    <!-- ov_msckf (primary estimator) args -->
+    <!-- ================================================================ -->
+    <arg name="verbosity"   default="INFO" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
+    <arg name="config"      default="euroc_mav" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
+    <arg name="config_path" default="$(find ov_msckf)/../config/$(arg config)/estimator_config.yaml" />
+    <arg name="max_cameras" default="1" />
+    <arg name="use_stereo"  default="false" />
+
+    <!-- dataset playback (optional) -->
+    <arg name="dobag"       default="true" />
+    <arg name="bag_start"   default="0" />
+    <arg name="bag_rate"    default="1" />
+    <arg name="dataset"     default="V1_01_easy" />
+    <arg name="bag"         default="/media/patrick/RPNG\ FLASH\ 3/$(arg config)/$(arg dataset).bag" />
+
+    <!-- ================================================================ -->
+    <!-- loop_fusion (secondary pose graph) args -->
+    <!-- ================================================================ -->
+    <arg name="loop_config_path" default="$(find loop_fusion)/../config/master_config.yaml" />
+
+    <!-- ================================================================ -->
+    <!-- rviz args -->
+    <!-- ================================================================ -->
+    <arg name="dorviz"    default="false" />
+    <arg name="rviz_conf" default="$(find loop_fusion)/../config/vins_rviz_config.rviz" />
+
+    <!-- saving trajectory path and timing information -->
+    <arg name="dosave"      default="false" />
+    <arg name="dotime"      default="false" />
+    <arg name="path_est"    default="/tmp/traj_estimate.txt" />
+    <arg name="path_time"   default="/tmp/traj_timing.txt" />
+
+    <!-- ================================================================ -->
+    <!-- launch both nodes -->
+    <!-- ================================================================ -->
+    <include file="$(find ov_msckf)/launch/subscribe.launch">
+        <arg name="verbosity"   value="$(arg verbosity)" />
+        <arg name="config"      value="$(arg config)" />
+        <arg name="config_path" value="$(arg config_path)" />
+        <arg name="max_cameras" value="$(arg max_cameras)" />
+        <arg name="use_stereo"  value="$(arg use_stereo)" />
+        <arg name="dobag"       value="$(arg dobag)" />
+        <arg name="bag_start"   value="$(arg bag_start)" />
+        <arg name="bag_rate"    value="$(arg bag_rate)" />
+        <arg name="dataset"     value="$(arg dataset)" />
+        <arg name="bag"         value="$(arg bag)" />
+        <arg name="dosave"      value="$(arg dosave)" />
+        <arg name="dotime"      value="$(arg dotime)" />
+        <arg name="path_est"    value="$(arg path_est)" />
+        <arg name="path_time"   value="$(arg path_time)" />
+    </include>
+
+    <include file="$(find loop_fusion)/launch/posegraph.launch">
+        <arg name="config_path" value="$(arg loop_config_path)" />
+    </include>
+
+    <group if="$(arg dorviz)">
+        <node name="ov_secondary_rviz" pkg="rviz" type="rviz" output="log" args="-d $(arg rviz_conf)" />
+    </group>
+
+</launch>
